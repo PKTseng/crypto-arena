@@ -1,30 +1,29 @@
 import { create } from 'zustand';
-import type { PriceState, TradePoint, WebSocketStatus } from '@/types';
+import type { PriceState, TradePoint, WebSocketStatus, ChainlinkStatus } from '@/types';
+import { CHAINLINK_STALE_THRESHOLD_MS } from '@/lib/constants';
 
-const MAX_HISTORY_LENGTH = 120; // 保留最近 120 個資料點（約 2 分鐘）
+const MAX_HISTORY_LENGTH = 120;
 
 export const usePriceStore = create<PriceState>((set) => ({
-  // ── Initial State ──────────────────────────────────────────
-  currentPrice: 0,
+  // ── Binance WS ─────────────────────────────────────────────
+  currentPrice:  0,
   priceChange24h: 0,
-  priceHistory: [],
-  wsStatus: 'connecting',
+  priceHistory:  [],
+  wsStatus:      'connecting',
+
+  // ── Chainlink Oracle ───────────────────────────────────────
+  chainlinkPrice:     0,
+  chainlinkUpdatedAt: 0,
+  chainlinkRoundId:   '',
+  chainlinkStatus:    'idle',
 
   // ── Actions ────────────────────────────────────────────────
 
   setCurrentPrice: (point: TradePoint) =>
     set((state) => {
       const history = [...state.priceHistory, point];
-
-      // 超過上限時移除最舊的資料點
-      if (history.length > MAX_HISTORY_LENGTH) {
-        history.shift();
-      }
-
-      return {
-        currentPrice: point.price,
-        priceHistory: history,
-      };
+      if (history.length > MAX_HISTORY_LENGTH) history.shift();
+      return { currentPrice: point.price, priceHistory: history };
     }),
 
   setPriceChange24h: (change: number) =>
@@ -35,4 +34,18 @@ export const usePriceStore = create<PriceState>((set) => ({
 
   clearHistory: () =>
     set({ priceHistory: [], currentPrice: 0 }),
+
+  setChainlinkData: (price: number, updatedAt: number, roundId: string) =>
+    set({
+      chainlinkPrice:     price,
+      chainlinkUpdatedAt: updatedAt,
+      chainlinkRoundId:   roundId,
+      // 自動判斷是否 stale（超過 1 小時未更新）
+      chainlinkStatus: Date.now() - updatedAt > CHAINLINK_STALE_THRESHOLD_MS
+        ? 'stale'
+        : 'success',
+    }),
+
+  setChainlinkStatus: (status: ChainlinkStatus) =>
+    set({ chainlinkStatus: status }),
 }));

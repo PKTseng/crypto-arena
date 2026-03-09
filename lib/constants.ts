@@ -2,6 +2,17 @@
 export const BINANCE_WS_URL   = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 export const BINANCE_TICKER_URL = 'https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT';
 
+// ── Chainlink Oracle ──────────────────────────────────────────
+// BTC/USD Price Feed on Ethereum Mainnet
+// https://docs.chain.link/data-feeds/price-feeds/addresses
+// 全小寫，useChainlinkPrice 內用 getAddress() 正規化為 EIP-55 checksum
+// Chainlink BTC/USD Proxy on Ethereum Mainnet（40 hex chars）
+export const CHAINLINK_BTC_USD_ADDRESS = '0xf4030086522a5beea4988f8ca5b36dbc97bee88c';
+export const CHAINLINK_BTC_USD_DECIMALS = 8;
+export const CHAINLINK_POLL_INTERVAL_MS = 30_000; // 30s（feed 約每小時或 0.5% 偏差才更新）
+export const CHAINLINK_STALE_THRESHOLD_MS = 3_600_000; // 超過 1 小時視為 stale
+export const CHAINLINK_PUBLIC_RPC = 'https://eth.llamarpc.com';
+
 // ── WebSocket ─────────────────────────────────────────────────
 export const WS_RECONNECT_BASE_MS = 1000;
 export const WS_RECONNECT_MAX_MS  = 30000;

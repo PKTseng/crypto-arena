@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import LivePriceBanner from '@/components/layout/LivePriceBanner';
 import WSProvider from './WSProvider';
 import WalletProvider from '@/providers/WalletProvider';
+import ThemeProvider from '@/providers/ThemeProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,20 +25,29 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-TW" className="dark">
+    // suppressHydrationWarning：next-themes 在 client 端注入 class，避免 hydration warning
+    <html lang="zh-TW" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${orbitron.variable} bg-gray-950 text-white antialiased min-h-screen`}
+        className={`
+          ${inter.variable} ${orbitron.variable}
+          bg-slate-50 text-slate-900
+          dark:bg-gray-950 dark:text-white
+          antialiased min-h-screen
+          transition-colors duration-200
+        `}
         style={{ fontFamily: 'var(--font-inter), sans-serif' }}
       >
-        <WalletProvider>
-          <WSProvider>
-            <Navbar />
-            <LivePriceBanner />
-            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-              {children}
-            </main>
-          </WSProvider>
-        </WalletProvider>
+        <ThemeProvider>
+          <WalletProvider>
+            <WSProvider>
+              <Navbar />
+              <LivePriceBanner />
+              <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+                {children}
+              </main>
+            </WSProvider>
+          </WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -9,23 +9,35 @@ import {
 
 /**
  * 遊戲回合計時器與狀態機。
- * 在 /game 頁面的根元件呼叫一次即可。
+ *
+ * 價格來源策略：
+ * - 鎖定價格（lockRound）：優先用 Chainlink Oracle，fallback 到 Binance WS
+ * - 結算價格（settleRound）：優先用 Chainlink Oracle，fallback 到 Binance WS
+ *
+ * 這讓遊戲結算依賴去中心化 Oracle，而非單一中心化 API。
  */
 export function useGameLogic() {
-  const phase          = useGameStore((s) => s.phase);
-  const prediction     = useGameStore((s) => s.prediction);
-  const startRound     = useGameStore((s) => s.startRound);
-  const lockRound      = useGameStore((s) => s.lockRound);
-  const settleRound    = useGameStore((s) => s.settleRound);
-  const currentPrice   = usePriceStore((s) => s.currentPrice);
+  const phase        = useGameStore((s) => s.phase);
+  const prediction   = useGameStore((s) => s.prediction);
+  const startRound   = useGameStore((s) => s.startRound);
+  const lockRound    = useGameStore((s) => s.lockRound);
+  const settleRound  = useGameStore((s) => s.settleRound);
 
-  const timerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const priceRef       = useRef<number>(0);
+  const currentPrice    = usePriceStore((s) => s.currentPrice);
+  const chainlinkPrice  = usePriceStore((s) => s.chainlinkPrice);
 
-  // 讓 timer callback 能拿到最新 price，而不是 stale closure
-  useEffect(() => {
-    priceRef.current = currentPrice;
-  }, [currentPrice]);
+  const timerRef         = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const priceRef         = useRef<number>(0);        // Binance WS 最新價格
+  const chainlinkRef     = useRef<number>(0);        // Chainlink 最新價格
+
+  // 保持 ref 同步，避免 stale closure
+  useEffect(() => { priceRef.current = currentPrice; },   [currentPrice]);
+  useEffect(() => { chainlinkRef.current = chainlinkPrice; }, [chainlinkPrice]);
+
+  /** 取得當前最佳報價：Chainlink 優先，Binance WS 備援 */
+  const getBestPrice = useCallback((): number => {
+    return chainlinkRef.current > 0 ? chainlinkRef.current : priceRef.current;
+  }, []);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -39,39 +51,34 @@ export function useGameLogic() {
     clearTimer();
 
     switch (phase) {
-      // idle → betting：有價格後自動開始第一回合
+      // idle → betting：有任一來源的價格後自動開始
       case 'idle':
-        if (currentPrice > 0) {
-          timerRef.current = setTimeout(() => {
-            startRound();
-          }, 500);
+        if (currentPrice > 0 || chainlinkPrice > 0) {
+          timerRef.current = setTimeout(() => startRound(), 500);
         }
         break;
 
-      // betting → locked：倒數結束後鎖定（若無預測則跳過，直接開下一回合）
+      // betting → locked：倒數結束後以最佳報價鎖定
       case 'betting':
         timerRef.current = setTimeout(() => {
           if (prediction !== null) {
-            lockRound(priceRef.current);
+            lockRound(getBestPrice());
           } else {
-            // 玩家未選擇，跳過此回合直接重新開始
-            startRound();
+            startRound(); // 玩家未選擇，跳過此回合
           }
         }, BETTING_DURATION_SEC * 1000);
         break;
 
-      // locked → result：等待結算
+      // locked → result：以最佳報價結算
       case 'locked':
         timerRef.current = setTimeout(() => {
-          settleRound(priceRef.current);
+          settleRound(getBestPrice());
         }, LOCK_DURATION_SEC * 1000);
         break;
 
       // result → betting：顯示結果後開下一回合
       case 'result':
-        timerRef.current = setTimeout(() => {
-          startRound();
-        }, RESULT_DISPLAY_SEC * 1000);
+        timerRef.current = setTimeout(() => startRound(), RESULT_DISPLAY_SEC * 1000);
         break;
     }
 

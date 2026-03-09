@@ -57,6 +57,9 @@ export interface RoundRecord {
 // Store Types
 // ============================================================
 
+/** Chainlink Oracle 狀態 */
+export type ChainlinkStatus = 'idle' | 'loading' | 'success' | 'error' | 'stale';
+
 /** priceStore 的 state 結構 */
 export interface PriceState {
   currentPrice: number;
@@ -64,11 +67,19 @@ export interface PriceState {
   priceHistory: TradePoint[];     // 近期價格點，給圖表使用
   wsStatus: WebSocketStatus;
 
+  // Chainlink Oracle
+  chainlinkPrice: number;         // 鏈上 BTC/USD 價格
+  chainlinkUpdatedAt: number;     // 鏈上最後更新時間 (Unix ms)
+  chainlinkRoundId: string;       // 最新 roundId（用於 Etherscan 連結）
+  chainlinkStatus: ChainlinkStatus;
+
   // Actions
   setCurrentPrice: (point: TradePoint) => void;
   setPriceChange24h: (change: number) => void;
   setWsStatus: (status: WebSocketStatus) => void;
   clearHistory: () => void;
+  setChainlinkData: (price: number, updatedAt: number, roundId: string) => void;
+  setChainlinkStatus: (status: ChainlinkStatus) => void;
 }
 
 /** gameStore 的 state 結構 */

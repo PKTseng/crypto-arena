@@ -1,9 +1,14 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAccount } from 'wagmi';
 import { useGameStore } from '@/store/gameStore';
+import { usePriceHistory } from '@/hooks/usePriceHistory';
+import { useOnChainBet } from '@/hooks/useOnChainBet';
+import TxStatusBadge from '@/components/arena/TxStatusBadge';
 import type { GamePhase, PredictionDirection } from '@/types';
 import { BETTING_DURATION_SEC, LOCK_DURATION_SEC } from '@/lib/constants';
+import { ARENA_BET_ADDRESS } from '@/lib/contracts';
 
 // ── SVG 倒數圓環 ──────────────────────────────────────────────
 const RADIUS      = 52;
@@ -31,7 +36,8 @@ function CountdownRing({
         {/* 背景環 */}
         <circle
           cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
-          fill="none" stroke="#ffffff08" strokeWidth={STROKE_W}
+          fill="none" strokeWidth={STROKE_W}
+          style={{ stroke: 'var(--ring-track)' }}
         />
         {/* 進度環 */}
         <motion.circle
@@ -41,6 +47,7 @@ function CountdownRing({
           strokeWidth={STROKE_W}
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
+          initial={{ strokeDashoffset: 0 }}
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 1, ease: 'linear' }}
           style={{ filter: `drop-shadow(0 0 8px ${color})` }}
@@ -79,16 +86,21 @@ interface Props {
 }
 
 export default function ArenaPredictionPanel({ phase, onPredict, timeLeft }: Props) {
-  const prediction  = useGameStore((s) => s.prediction);
-  const betAmount   = useGameStore((s) => s.betAmount);
+  const prediction   = useGameStore((s) => s.prediction);
+  const betAmount    = useGameStore((s) => s.betAmount);
   const setBetAmount = useGameStore((s) => s.setBetAmount);
-  const lockedPrice = useGameStore((s) => s.lockedPrice);
+  const lockedPrice  = useGameStore((s) => s.lockedPrice);
 
   const isBetting = phase === 'betting';
   const isLocked  = phase === 'locked';
   const totalTime = isBetting ? BETTING_DURATION_SEC : LOCK_DURATION_SEC;
-
   const canPredict = isBetting && prediction === null;
+
+  // ── On-chain hooks ────────────────────────────────────────────────────
+  const { isConnected }                              = useAccount();
+  const { currentPrice }                             = usePriceHistory();
+  const { recordBet, hash, status: txStatus, error: txError, reset: resetTx, isCorrectChain } = useOnChainBet();
+  const contractDeployed = Boolean(ARENA_BET_ADDRESS);
 
   return (
     <div className="flex flex-col items-center gap-6 h-full">
@@ -178,6 +190,69 @@ export default function ArenaPredictionPanel({ phase, onPredict, timeLeft }: Pro
         </motion.button>
       </div>
 
+      {/* ── On-Chain Recording ── */}
+      {prediction && isBetting && (
+        <div className="w-full flex flex-col gap-2">
+          {/* Divider */}
+          <div className="flex items-center gap-2">
+            <span className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
+            <span
+              className="text-[9px] tracking-[0.25em] text-slate-400 dark:text-gray-600"
+              style={{ fontFamily: 'var(--font-orbitron)' }}
+            >
+              ON-CHAIN · SEPOLIA
+            </span>
+            <span className="h-px flex-1 bg-slate-200 dark:bg-white/5" />
+          </div>
+
+          {/* State: contract not deployed */}
+          {!contractDeployed ? (
+            <p
+              className="text-center text-[10px] text-slate-400 dark:text-gray-600 tracking-wider"
+              style={{ fontFamily: 'var(--font-orbitron)' }}
+            >
+              Contract not deployed — see README
+            </p>
+
+          /* State: wallet not connected */
+          ) : !isConnected ? (
+            <p
+              className="text-center text-[10px] text-slate-400 dark:text-gray-600 tracking-wider"
+              style={{ fontFamily: 'var(--font-orbitron)' }}
+            >
+              Connect wallet to record on-chain
+            </p>
+
+          /* State: wrong network */
+          ) : !isCorrectChain ? (
+            <p
+              className="text-center text-[10px] tracking-wider"
+              style={{ color: '#FFB800', fontFamily: 'var(--font-orbitron)' }}
+            >
+              ⚠️ Switch to Sepolia testnet
+            </p>
+
+          /* State: idle → show Record button */
+          ) : txStatus === 'idle' ? (
+            <motion.button
+              onClick={() => recordBet(prediction, currentPrice, betAmount)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="w-full py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all
+                         border border-[#375BD2]/40 hover:border-[#375BD2]/70
+                         bg-[#375BD2]/10 hover:bg-[#375BD2]/20"
+              style={{ color: '#375BD2', fontFamily: 'var(--font-orbitron)' }}
+            >
+              ⬡ Record on Sepolia
+            </motion.button>
+
+          /* State: tx in progress / done */
+          ) : (
+            <TxStatusBadge status={txStatus} hash={hash} onReset={resetTx} />
+          )}
+        </div>
+      )}
+
       {/* 下注金額 */}
       <div className="w-full">
         <div className="flex items-center justify-between mb-2">
@@ -202,12 +277,13 @@ export default function ArenaPredictionPanel({ phase, onPredict, timeLeft }: Pro
               key={preset}
               onClick={() => isBetting && setBetAmount(preset)}
               disabled={!isBetting}
-              className="py-2 rounded-lg text-xs font-semibold transition-all duration-150"
+              className={`py-2 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                betAmount === preset
+                  ? 'bg-[#00D4FF20] border border-[#00D4FF60] text-[#00D4FF]'
+                  : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-500'
+              }`}
               style={{
                 fontFamily: 'var(--font-orbitron)',
-                background: betAmount === preset ? '#00D4FF20' : '#ffffff08',
-                border: `1px solid ${betAmount === preset ? '#00D4FF60' : '#ffffff10'}`,
-                color: betAmount === preset ? '#00D4FF' : '#6b7280',
                 cursor: isBetting ? 'pointer' : 'not-allowed',
               }}
             >
@@ -227,14 +303,12 @@ export default function ArenaPredictionPanel({ phase, onPredict, timeLeft }: Pro
             if (!isNaN(v) && v > 0) setBetAmount(v);
           }}
           disabled={!isBetting}
-          className="w-full px-4 py-2.5 rounded-xl text-sm text-center font-semibold outline-none transition-all"
-          style={{
-            fontFamily: 'var(--font-orbitron)',
-            background: '#ffffff06',
-            border: '1px solid #00D4FF20',
-            color: isBetting ? '#ffffff' : '#4b5563',
-            cursor: isBetting ? 'text' : 'not-allowed',
-          }}
+          className={`w-full px-4 py-2.5 rounded-xl text-sm text-center font-semibold outline-none transition-all bg-slate-100 dark:bg-white/5 border border-[#00D4FF]/20 ${
+            isBetting
+              ? 'text-slate-900 dark:text-white cursor-text'
+              : 'text-slate-400 dark:text-gray-600 cursor-not-allowed'
+          }`}
+          style={{ fontFamily: 'var(--font-orbitron)' }}
         />
       </div>
     </div>

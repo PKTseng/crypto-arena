@@ -1,16 +1,17 @@
 'use client';
 
 import { createConfig, http, WagmiProvider } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
+import { mainnet, sepolia } from 'wagmi/chains';
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 
 const config = createConfig(
   getDefaultConfig({
-    chains: [mainnet],
+    chains: [mainnet, sepolia],
     transports: {
-      [mainnet.id]: http('https://eth.llamarpc.com'), // 免費公共 RPC
+      [mainnet.id]:  http('https://eth.llamarpc.com'),
+      [sepolia.id]:  http('https://rpc.sepolia.org'),
     },
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? '',
     appName: 'CryptoArena',

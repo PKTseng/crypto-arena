@@ -4,15 +4,29 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+    --scrollbar-track: #f1f5f9;
+    --scrollbar-thumb: #cbd5e1;
+    /* Arena theme tokens */
+    --arena-surface: #ffffff;
+    --arena-surface-alt: #f8fafc;
+    --arena-border: #e2e8f0;
+    --ring-track: rgba(0, 0, 0, 0.06);
+  }
+
+  .dark {
     color-scheme: dark;
+    --scrollbar-track: #030712;
+    --scrollbar-thumb: #374151;
+    /* Arena theme tokens */
+    --arena-surface: #0D1117;
+    --arena-surface-alt: #0A0A0F;
+    --arena-border: rgba(0, 212, 255, 0.08);
+    --ring-track: rgba(255, 255, 255, 0.03);
   }
 
   * {
     box-sizing: border-box;
-  }
-
-  body {
-    @apply bg-gray-950 text-white;
   }
 
   /* 自訂滾動條 */
@@ -20,19 +34,21 @@
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-gray-950;
+    background: var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
   }
 }
 
 @layer utilities {
+  /* 發光文字 — 只在深色模式有意義 */
   .text-glow-yellow {
-    text-shadow: 0 0 20px rgba(234, 179, 8, 0.5);
+    text-shadow: 0 0 20px rgba(234, 179, 8, 0.4);
+  }
+  .dark .text-glow-yellow {
+    text-shadow: 0 0 30px rgba(234, 179, 8, 0.6);
   }
   .text-glow-green {
     text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);

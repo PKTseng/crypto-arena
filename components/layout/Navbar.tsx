@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ConnectButton from '@/components/wallet/ConnectButton';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const navLinks = [
   { href: '/',            label: 'Home' },
@@ -16,11 +17,13 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const pathname   = usePathname();
+  const pathname    = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-950/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b transition-colors duration-200
+                       bg-white/90 border-slate-200 backdrop-blur-md
+                       dark:bg-gray-950/90 dark:border-gray-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
 
         {/* Logo */}
@@ -47,7 +50,7 @@ export default function Navbar() {
                 'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150',
                 pathname === href
                   ? 'text-[#00D4FF] bg-[#00D4FF12]'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800/60',
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800/60',
               )}
             >
               {label}
@@ -55,17 +58,21 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Desktop: Connect Wallet */}
-        <div className="hidden sm:block shrink-0">
+        {/* Desktop Right: ThemeToggle + ConnectButton */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          <ThemeToggle />
           <ConnectButton />
         </div>
 
-        {/* Mobile: Connect (icon only) + Hamburger */}
-        <div className="flex sm:hidden items-center gap-2">
+        {/* Mobile Right: ThemeToggle + ConnectButton + Hamburger */}
+        <div className="flex sm:hidden items-center gap-1">
+          <ThemeToggle />
           <ConnectButton />
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-lg transition-colors
+                       text-slate-500 hover:text-slate-900 hover:bg-slate-100
+                       dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -73,7 +80,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Dropdown */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -81,7 +88,9 @@ export default function Navbar() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="sm:hidden overflow-hidden border-t border-gray-800 bg-gray-950"
+            className="sm:hidden overflow-hidden border-t transition-colors
+                       bg-white border-slate-200
+                       dark:bg-gray-950 dark:border-gray-800"
           >
             <nav className="flex flex-col px-4 py-3 gap-1">
               {navLinks.map(({ href, label }) => (
@@ -93,7 +102,7 @@ export default function Navbar() {
                     'px-4 py-3 rounded-xl text-sm font-medium transition-colors',
                     pathname === href
                       ? 'text-[#00D4FF] bg-[#00D4FF10]'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800',
                   )}
                 >
                   {label}

@@ -34,8 +34,8 @@ export default function ArenaTradeHistory({ history }: Props) {
 
       {!items.length && (
         <div
-          className="text-center py-8 text-xs tracking-widest animate-pulse"
-          style={{ color: '#ffffff15', fontFamily: 'var(--font-orbitron)' }}
+          className="text-center py-8 text-xs tracking-widest animate-pulse text-slate-300 dark:text-white/10"
+          style={{ fontFamily: 'var(--font-orbitron)' }}
         >
           NO HISTORY YET
         </div>

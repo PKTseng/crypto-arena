@@ -84,9 +84,10 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
   const isMe     = player.isMe;
   const rankDiff = prevRank - player.rank; // 正 = 上升，負 = 下降
 
-  const borderColor = isMe ? ME_STYLE.border : medal ? medal.border : '#ffffff10';
+  const isPlain     = !isMe && !medal;
+  const borderColor = isMe ? ME_STYLE.border : medal ? medal.border : undefined;
   const bg          = isMe ? ME_STYLE.bg     : medal ? medal.bg     : 'transparent';
-  const nameColor   = isMe ? ME_STYLE.text   : medal ? medal.text   : '#e5e7eb';
+  const nameColor   = isMe ? ME_STYLE.text   : medal ? medal.text   : undefined;
   const boxShadow   = isMe ? ME_STYLE.glow   : medal ? medal.glow   : 'none';
 
   return (
@@ -96,11 +97,11 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="grid items-center gap-2 px-4 py-3.5 rounded-2xl"
+      className={`grid items-center gap-2 px-4 py-3.5 rounded-2xl transition-colors ${isPlain ? 'border border-slate-200 dark:border-white/5' : ''}`}
       style={{
         gridTemplateColumns: '2.5rem 2.5rem 1fr repeat(3, auto)',
-        background:   bg,
-        border:       `1px solid ${borderColor}`,
+        background:   bg || 'transparent',
+        border:       borderColor ? `1px solid ${borderColor}` : undefined,
         boxShadow,
       }}
     >
@@ -110,8 +111,8 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
           <span className="text-lg">{medal.label}</span>
         ) : (
           <span
-            className="text-sm font-bold"
-            style={{ color: '#4b5563', fontFamily: 'var(--font-orbitron)' }}
+            className="text-sm font-bold text-slate-400 dark:text-gray-600"
+            style={{ fontFamily: 'var(--font-orbitron)' }}
           >
             #{player.rank}
           </span>
@@ -126,8 +127,11 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
       {/* 名稱 + 排名變動 */}
       <div className="flex items-center gap-2 min-w-0">
         <span
-          className="font-semibold text-sm truncate"
-          style={{ color: nameColor, fontFamily: isMe ? 'var(--font-orbitron)' : undefined }}
+          className={`font-semibold text-sm truncate ${!isMe && !medal ? 'text-slate-800 dark:text-gray-200' : ''}`}
+          style={{
+            color: (isMe || medal) ? nameColor : undefined,
+            fontFamily: isMe ? 'var(--font-orbitron)' : undefined,
+          }}
         >
           {player.name}
           {isMe && (
@@ -155,7 +159,7 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
 
       {/* 勝率 */}
       <div className="hidden sm:flex flex-col items-end">
-        <span className="text-[10px] text-gray-600 tracking-wider">WIN RATE</span>
+        <span className="text-[10px] text-slate-400 dark:text-gray-600 tracking-wider">WIN RATE</span>
         <span
           className="text-sm font-bold"
           style={{
@@ -169,7 +173,7 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
 
       {/* 最高連勝 */}
       <div className="hidden md:flex flex-col items-end">
-        <span className="text-[10px] text-gray-600 tracking-wider">STREAK</span>
+        <span className="text-[10px] text-slate-400 dark:text-gray-600 tracking-wider">STREAK</span>
         <span
           className="text-sm font-bold text-orange-400"
           style={{ fontFamily: 'var(--font-orbitron)' }}
@@ -180,13 +184,13 @@ function PlayerRow({ player, prevRank }: { player: Player; prevRank: number }) {
 
       {/* 總收益 */}
       <div className="flex flex-col items-end">
-        <span className="text-[10px] text-gray-600 tracking-wider">PROFIT</span>
+        <span className="text-[10px] text-slate-400 dark:text-gray-600 tracking-wider">PROFIT</span>
         <motion.span
           key={Math.round(player.totalProfit / 100)}
           initial={{ color: '#00FF88' }}
-          animate={{ color: '#ffffff' }}
+          animate={{ color: 'inherit' }}
           transition={{ duration: 1 }}
-          className="text-sm font-black"
+          className="text-sm font-black text-slate-900 dark:text-white"
           style={{ fontFamily: 'var(--font-orbitron)' }}
         >
           ${Math.round(player.totalProfit).toLocaleString()}
@@ -257,8 +261,8 @@ export default function LeaderboardPage() {
 
   return (
     <div
-      className="min-h-[calc(100vh-8rem)] rounded-2xl -mx-4 sm:-mx-6 px-4 sm:px-6 py-8"
-      style={{ background: '#0A0A0F' }}
+      className="min-h-[calc(100vh-8rem)] rounded-2xl -mx-4 sm:-mx-6 px-4 sm:px-6 py-8
+                 bg-slate-50 dark:bg-[#0A0A0F] transition-colors duration-200"
     >
       <div className="max-w-3xl mx-auto flex flex-col gap-8">
 
@@ -271,7 +275,7 @@ export default function LeaderboardPage() {
             >
               LEADERBOARD
             </h1>
-            <p className="text-gray-600 text-sm mt-1 tracking-wider">GLOBAL RANKINGS</p>
+            <p className="text-slate-400 dark:text-gray-600 text-sm mt-1 tracking-wider">GLOBAL RANKINGS</p>
           </div>
 
           {/* 自己的卡片 */}
@@ -292,11 +296,11 @@ export default function LeaderboardPage() {
                 #{myRank}
               </p>
             </div>
-            <div className="w-px h-10 bg-gray-800 mx-1" />
+            <div className="w-px h-10 bg-gray-200 dark:bg-gray-800 mx-1" />
             <div>
               <p className="text-[10px] text-gray-500 tracking-widest">PROFIT</p>
               <p
-                className="text-lg font-black text-white"
+                className="text-lg font-black text-slate-900 dark:text-white"
                 style={{ fontFamily: 'var(--font-orbitron)' }}
               >
                 ${myScore.toLocaleString()}
@@ -308,7 +312,7 @@ export default function LeaderboardPage() {
         {/* ── 即時更新提示 ── */}
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[#00FF88] animate-pulse" />
-          <span className="text-[11px] text-gray-600 tracking-widest">
+          <span className="text-[11px] text-slate-400 dark:text-gray-600 tracking-widest">
             LIVE UPDATES EVERY 5S — LAST: {lastUpdate}
           </span>
         </div>
@@ -326,10 +330,7 @@ export default function LeaderboardPage() {
           </AnimatePresence>
         </div>
 
-        <p
-          className="text-center text-[11px] tracking-widest pb-4"
-          style={{ color: '#ffffff10' }}
-        >
+        <p className="text-center text-[11px] tracking-widest pb-4 text-slate-300 dark:text-gray-800">
           * LEADERBOARD DATA IS SIMULATED FOR DEMO PURPOSES
         </p>
       </div>

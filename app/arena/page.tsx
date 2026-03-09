@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, useAnimate } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { useGameLogic } from '@/hooks/useGameLogic';
+import { useChainlinkPrice } from '@/hooks/useChainlinkPrice';
 import { usePriceHistory } from '@/hooks/usePriceHistory';
 import { BETTING_DURATION_SEC, LOCK_DURATION_SEC } from '@/lib/constants';
 import PriceHeader from '@/components/arena/PriceHeader';
@@ -12,15 +13,12 @@ import ArenaPredictionPanel from '@/components/arena/ArenaPredictionPanel';
 import ArenaTradeHistory from '@/components/arena/ArenaTradeHistory';
 import ResultEffect from '@/components/arena/ResultEffect';
 
-// ── 面板邊框樣式 ──────────────────────────────────────────────
-const PANEL_STYLE: React.CSSProperties = {
-  background:   '#0D1117',
-  border:       '1px solid #00D4FF15',
-  borderRadius: '1.25rem',
-};
+// ── 面板共用 class（light/dark 雙主題）────────────────────────
+const PANEL_CLS = 'bg-white dark:bg-[#0D1117] border border-slate-200 dark:border-[#00D4FF]/[0.08] rounded-[1.25rem]';
 
 export default function ArenaPage() {
-  useGameLogic(); // 啟動遊戲狀態機
+  useGameLogic();      // 啟動遊戲狀態機
+  useChainlinkPrice(); // 定期讀取 Chainlink BTC/USD Oracle
 
   const phase        = useGameStore((s) => s.phase);
   const roundResult  = useGameStore((s) => s.roundResult);
@@ -88,8 +86,7 @@ export default function ArenaPage() {
           ].map(({ label, value, color }) => (
             <motion.div
               key={label}
-              className="flex flex-col items-center py-3 px-2 rounded-xl"
-              style={{ background: '#0D1117', border: '1px solid #ffffff08' }}
+              className="flex flex-col items-center py-3 px-2 rounded-xl bg-white dark:bg-[#0D1117] border border-slate-200 dark:border-white/5"
               layout
             >
               <span
@@ -116,7 +113,7 @@ export default function ArenaPage() {
         <div className="grid lg:grid-cols-5 gap-4">
 
           {/* 左：走勢圖（佔 3 欄） */}
-          <div className="lg:col-span-3" style={{ ...PANEL_STYLE, padding: '1.25rem' }}>
+          <div className={`lg:col-span-3 p-5 ${PANEL_CLS}`}>
             <div
               className="text-xs tracking-[0.2em] mb-4"
               style={{ color: '#00D4FF60', fontFamily: 'var(--font-orbitron)' }}
@@ -130,10 +127,8 @@ export default function ArenaPage() {
 
           {/* 右：預測面板（佔 2 欄） */}
           <div
-            className="lg:col-span-2"
+            className={`lg:col-span-2 p-6 ${PANEL_CLS}`}
             style={{
-              ...PANEL_STYLE,
-              padding: '1.5rem',
               boxShadow: phase === 'betting'
                 ? '0 0 40px #00D4FF10'
                 : phase === 'locked'
@@ -150,7 +145,7 @@ export default function ArenaPage() {
         </div>
 
         {/* ── 底部：交易歷史 ── */}
-        <div style={{ ...PANEL_STYLE, padding: '1.5rem' }}>
+        <div className={`p-6 ${PANEL_CLS}`}>
           <div className="flex items-center justify-between mb-4">
             <span
               className="text-xs tracking-[0.2em]"
@@ -160,13 +155,8 @@ export default function ArenaPage() {
             </span>
             <button
               onClick={resetGame}
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-              style={{
-                fontFamily: 'var(--font-orbitron)',
-                background: '#ffffff08',
-                border: '1px solid #ffffff10',
-                color: '#6b7280',
-              }}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-500"
+              style={{ fontFamily: 'var(--font-orbitron)' }}
             >
               RESET
             </button>

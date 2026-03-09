@@ -26,8 +26,8 @@ function CustomTooltip({ active, payload }: TooltipProps) {
     <div
       className="px-3 py-2 rounded-lg text-xs"
       style={{
-        background: '#0D1117',
-        border: '1px solid #00D4FF30',
+        background: 'var(--arena-surface)',
+        border: '1px solid #00D4FF40',
         color: '#00D4FF',
         fontFamily: 'var(--font-orbitron)',
       }}
@@ -67,8 +67,8 @@ export default function ArenaChart() {
   if (data.length < 2) {
     return (
       <div
-        className="flex items-center justify-center h-full text-sm tracking-widest"
-        style={{ color: '#00D4FF50', fontFamily: 'var(--font-orbitron)' }}
+        className="flex items-center justify-center h-full text-sm tracking-widest text-cyan-400/60 dark:text-[#00D4FF]/30"
+        style={{ fontFamily: 'var(--font-orbitron)' }}
       >
         LOADING FEED...
       </div>
